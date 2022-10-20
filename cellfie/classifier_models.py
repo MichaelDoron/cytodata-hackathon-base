@@ -52,8 +52,9 @@ def create_logger():
 def load_data_pth (args, return_names = False): 
     #args
     
-    features = torch_load(args.data_path + args.train_features).numpy()
-    labels = pd.read_parquet(args.data_path + args.train_parquet)
+    features = torch_load(args.data_path + args.train_features)[0]#.numpy()
+    #labels = pd.read_parquet(args.data_path + args.train_parquet)
+    labels = pd.read_csv(args.data_path + args.train_parquet)
     # labels = df['cell_stage']
     
     train_feat, test_feat, train_targets, test_target = train_test_split(features, labels, test_size = 0.2, random_state=1)
@@ -104,13 +105,16 @@ def main():
     #predictions = np.argmax(predictions, axis=1)
     print (test_target.shape, predictions.shape)
     cm = confusion_matrix(test_target, predictions)
+    cmr = confusion_matrix(test_target, test_target)
     ac = accuracy_score(test_target, predictions)
     logger.info(" [🗸] -> Predictions with shape {0}".format(predictions.shape))
     
     
     logger.info(" [🗸] -> Computing metrics {0}".format(predictions.shape))
-    _, ax = plt.subplots(figsize = (5,5))
-    sns.heatmap(cm, annot=True, cmap="hot", ax = ax)
+    _, ax = plt.subplots(figsize = (10,10))
+    #sns.heatmap(cm, annot=True, cmap="hot", ax = ax)fmt = '.2f', annot_kws = {'size': 10}, yticklabels = cols.values, xticklabels = cols.values)
+    labels = ['M0', 'M1M2', 'M3', 'M4M5', 'M6M7_comp', 'M6M7_sing']
+    sns.heatmap(np.divide(cm.T, cmr.diagonal()).T, annot=True, cmap="hot", fmt = '.3f', annot_kws = {'size': 12}, yticklabels=labels, xticklabels = labels, ax = ax)
     ax.set_title("{1} - Accuracy: {0:.3f}".format(ac, args.name_exp))
     plt.savefig(args.out_image)
     logger.info(" [🗸] -> Metrics saved to: {0}".format(args.out_image))
